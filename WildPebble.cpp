@@ -1,0 +1,598 @@
+//
+//  WildPebble.cpp
+//
+//
+//  Created by Adrian Vos/LLM on 16/05/2026.
+//
+
+
+// Wild Pebble
+// A playable generative rhythm + melody organism
+// for the Music Thing Modular Workshop Computer.
+//
+// Inspired by the spirit of Jonah Senzel's Pet Rock.
+//
+// This card creates:
+// - two related trigger streams
+// - a quantised melodic CV line
+// - an evolving modulation/energy output
+// - constrained musical mutation
+//
+// Design goals:
+// - musically useful
+// - low CPU usage
+// - easy to understand
+// - stable on Workshop Computer hardware
+//
+// All sequencing logic is integer-only and lightweight.
+// Expensive work happens at control rate instead of every sample.
+
+#include "ComputerCard.h"
+#include "hardware/clocks.h"
+#include <stdint.h>
+
+class WildPebble : public ComputerCard
+{
+public:
+    static constexpr int32_t kSteps = 16;
+
+    static constexpr int32_t kScaleCount = 4;
+
+    static constexpr int32_t kScales[kScaleCount][5] =
+    {
+        {0, 3, 5, 7, 10},
+        {0, 2, 5, 7, 10},
+        {0, 2, 4, 7, 9},
+        {0, 5, 7, 10, 12}
+    };
+
+    int32_t trigProb[kSteps];
+    int32_t noteIndex[kSteps];
+    int32_t accent[kSteps];
+    int32_t energy[kSteps];
+
+    int32_t currentStep = -1;
+
+    int32_t currentMIDINote = 48;
+    int32_t currentEnergy = 0;
+
+    bool pulse1 = false;
+    bool pulse2 = false;
+
+    int32_t pulseTimer1 = 0;
+    int32_t pulseTimer2 = 0;
+
+    int32_t pulseLength1 = 700;
+    int32_t pulseLength2 = 400;
+
+    uint32_t sampleCounter = 0;
+    uint32_t clockCounter = 0;
+
+    uint32_t internalClockPeriod = 4000;
+
+    bool externalClockActive = false;
+    uint32_t externalClockTimeout = 0;
+
+    int32_t tension = 64;
+    bool tensionRising = true;
+
+    int32_t swingOffset = 0;
+
+    int32_t smoothedEnergy = 0;
+
+    int32_t currentScale = 0;
+
+    uint32_t rng = 0xCAFEBABE;
+
+    bool rngSeeded = false;
+
+    static constexpr uint32_t kLedDivider = 96;
+
+    static constexpr int32_t mutationResistance[kSteps] =
+    {
+        1,4,3,5,
+        1,5,3,4,
+        1,4,3,5,
+        1,5,3,4
+    };
+
+    inline int32_t SoftClip(int32_t x)
+    {
+        if(x > 1536)
+        {
+            x = 1536 + ((x - 1536) >> 2);
+        }
+
+        if(x < -1536)
+        {
+            x = -1536 + ((x + 1536) >> 2);
+        }
+
+        return x;
+    }
+
+    inline uint32_t Random()
+    {
+        rng ^= rng << 13;
+        rng ^= rng >> 17;
+        rng ^= rng << 5;
+        return rng;
+    }
+
+    WildPebble()
+    {
+        for(int32_t i = 0; i < kSteps; ++i)
+        {
+            trigProb[i] = 140;
+            noteIndex[i] = i % 5;
+            accent[i] = 128;
+            energy[i] = 96;
+        }
+
+        trigProb[0] = 255;
+        trigProb[4] = 220;
+        trigProb[8] = 220;
+        trigProb[12] = 220;
+    }
+
+    void UpdateTension()
+    {
+        if(tensionRising)
+        {
+            tension++;
+
+            if(tension > 220)
+            {
+                tensionRising = false;
+            }
+        }
+        else
+        {
+            tension--;
+
+            if(tension < 40)
+            {
+                tensionRising = true;
+            }
+        }
+    }
+
+    void RotateScaleSlowly()
+    {
+        if((Random() & 255) == 0)
+        {
+            currentScale++;
+
+            if(currentScale >= kScaleCount)
+            {
+                currentScale = 0;
+            }
+        }
+    }
+
+    void CopyPhrase()
+    {
+        int32_t src = (Random() % 4) * 4;
+        int32_t dst = (Random() % 4) * 4;
+
+        if(src == dst)
+        {
+            return;
+        }
+
+        for(int32_t i = 0; i < 4; ++i)
+        {
+            trigProb[dst + i] = trigProb[src + i];
+            noteIndex[dst + i] = noteIndex[src + i];
+            accent[dst + i] = accent[src + i];
+        }
+
+        int32_t mutateStep = dst + (Random() & 3);
+
+        noteIndex[mutateStep] += ((Random() % 3) - 1);
+
+        if(noteIndex[mutateStep] < 0)
+        {
+            noteIndex[mutateStep] = 0;
+        }
+
+        if(noteIndex[mutateStep] > 14)
+        {
+            noteIndex[mutateStep] = 14;
+        }
+    }
+
+    int32_t WeightedMelodicMove(int32_t mode)
+    {
+        uint32_t r = Random() & 255;
+
+        if(mode == Switch::Up)
+        {
+            if(r < 120) return 0;
+            if(r < 220) return (Random() & 1) ? 1 : -1;
+            return 0;
+        }
+
+        if(mode == Switch::Middle)
+        {
+            if(r < 80) return 0;
+            if(r < 200) return (Random() & 1) ? 1 : -1;
+            if(r < 240) return (Random() & 1) ? 2 : -2;
+            return (Random() & 1) ? 5 : -5;
+        }
+
+        if(r < 40) return 0;
+        if(r < 150) return (Random() & 1) ? 1 : -1;
+        if(r < 220) return (Random() & 1) ? 2 : -2;
+        return (Random() & 1) ? 5 : -5;
+    }
+
+    void Mutate(int32_t amount, int32_t mode)
+    {
+        int32_t step = Random() % kSteps;
+
+        if((Random() % mutationResistance[step]) != 0)
+        {
+            return;
+        }
+
+        if((Random() & 255) > (uint32_t)amount)
+        {
+            return;
+        }
+
+        trigProb[step] += ((int32_t)(Random() & 31)) - 15;
+
+        if(trigProb[step] < 20)
+        {
+            trigProb[step] = 20;
+        }
+
+        if(trigProb[step] > 255)
+        {
+            trigProb[step] = 255;
+        }
+
+        noteIndex[step] += WeightedMelodicMove(mode);
+
+        if(noteIndex[step] < 0)
+        {
+            noteIndex[step] = 0;
+        }
+
+        if(noteIndex[step] > 14)
+        {
+            noteIndex[step] = 14;
+        }
+
+        energy[step] += ((int32_t)(Random() & 63)) - 31;
+
+        if(energy[step] < 0)
+        {
+            energy[step] = 0;
+        }
+
+        if(energy[step] > 255)
+        {
+            energy[step] = 255;
+        }
+
+        accent[step] += ((int32_t)(Random() & 31)) - 15;
+
+        if(accent[step] < 32)
+        {
+            accent[step] = 32;
+        }
+
+        if(accent[step] > 255)
+        {
+            accent[step] = 255;
+        }
+    }
+
+    void AdvanceStep(int32_t density, int32_t mode)
+    {
+        currentStep++;
+
+        if(currentStep >= kSteps)
+        {
+            currentStep = 0;
+        }
+
+        int32_t threshold =
+            trigProb[currentStep] +
+            (density >> 5);
+
+        if(threshold > 255)
+        {
+            threshold = 255;
+        }
+
+        pulse1 =
+            ((Random() & 255) < (uint32_t)threshold);
+
+        int32_t companionThreshold = threshold >> 1;
+
+        if((currentStep & 3) == 2)
+        {
+            companionThreshold += 40;
+        }
+
+        if((currentStep & 1) && mode == Switch::Down)
+        {
+            companionThreshold += 30;
+        }
+
+        if(companionThreshold > 255)
+        {
+            companionThreshold = 255;
+        }
+
+        pulse2 =
+            pulse1 &&
+            ((Random() & 255) <
+            (uint32_t)companionThreshold);
+
+        int32_t octave = noteIndex[currentStep] / 5;
+        int32_t degree = noteIndex[currentStep] % 5;
+
+        currentMIDINote =
+            48 +
+            (octave * 12) +
+            kScales[currentScale][degree];
+
+        if(currentMIDINote < 0)
+        {
+            currentMIDINote = 0;
+        }
+
+        if(currentMIDINote > 127)
+        {
+            currentMIDINote = 127;
+        }
+
+        currentEnergy =
+            energy[currentStep] +
+            (accent[currentStep] >> 1) +
+            (tension >> 1);
+
+        if(currentEnergy > 255)
+        {
+            currentEnergy = 255;
+        }
+
+        pulseTimer1 = pulseLength1;
+        pulseTimer2 = pulseLength2;
+    }
+
+    virtual void ProcessSample()
+    {
+        sampleCounter++;
+
+        if(!rngSeeded)
+        {
+            rng ^= sampleCounter;
+            rng ^= (uint32_t)(KnobVal(Knob::Main) << 1);
+            rng ^= (uint32_t)(CVIn1() << 3);
+            rngSeeded = true;
+        }
+
+        int32_t tempo = KnobVal(Knob::Main);
+        int32_t density = KnobVal(Knob::X);
+        int32_t mutation = KnobVal(Knob::Y);
+
+        density += (CVIn1() >> 4);
+        mutation += (CVIn2() >> 4);
+
+        if(density < 0) density = 0;
+        if(density > 4095) density = 4095;
+
+        if(mutation < 0) mutation = 0;
+        if(mutation > 4095) mutation = 4095;
+
+        int32_t mode = SwitchVal();
+
+        bool freeze = PulseIn2();
+
+        bool clockEvent = false;
+
+        if(PulseIn1RisingEdge())
+        {
+            externalClockActive = true;
+            externalClockTimeout = 48000;
+            clockEvent = true;
+        }
+
+        if(externalClockTimeout > 0)
+        {
+            externalClockTimeout--;
+        }
+        else
+        {
+            externalClockActive = false;
+        }
+
+        if(!externalClockActive)
+        {
+            swingOffset = 0;
+
+            if(mode == Switch::Middle)
+            {
+                swingOffset = 120;
+            }
+            else if(mode == Switch::Down)
+            {
+                swingOffset = 260;
+            }
+
+            internalClockPeriod =
+                12000 - ((tempo * 11000) >> 12);
+
+            if((currentStep >= 0) && (currentStep & 1))
+            {
+                internalClockPeriod += swingOffset;
+            }
+
+            clockCounter++;
+
+            if(clockCounter >= internalClockPeriod)
+            {
+                clockCounter = 0;
+                clockEvent = true;
+            }
+        }
+
+        if(clockEvent)
+        {
+            AdvanceStep(density, mode);
+
+            if(!freeze)
+            {
+                int32_t mutationAmount =
+                    (mutation >> 4) +
+                    (tension >> 3);
+
+                Mutate(mutationAmount, mode);
+            }
+
+            if((currentStep & 3) == 0)
+            {
+                UpdateTension();
+            }
+
+            if(currentStep == 0)
+            {
+                if((Random() & 7) == 0)
+                {
+                    CopyPhrase();
+                }
+
+                RotateScaleSlowly();
+            }
+        }
+
+        if(pulseTimer1 > 0)
+        {
+            pulseTimer1--;
+        }
+        else
+        {
+            pulse1 = false;
+        }
+
+        if(pulseTimer2 > 0)
+        {
+            pulseTimer2--;
+        }
+        else
+        {
+            pulse2 = false;
+        }
+
+        PulseOut1(pulse1);
+        PulseOut2(pulse2);
+
+        CVOut1MIDINote(currentMIDINote);
+
+        smoothedEnergy +=
+            (currentEnergy - smoothedEnergy) >> 5;
+
+        int32_t energyCV =
+            (smoothedEnergy << 4) - 2048;
+
+        energyCV = SoftClip(energyCV);
+
+        if(energyCV > 2047)
+        {
+            energyCV = 2047;
+        }
+
+        if(energyCV < -2048)
+        {
+            energyCV = -2048;
+        }
+        
+        CVOut2(energyCV);
+
+        int32_t click = 0;
+
+        if(pulse1)
+        {
+            if(pulseTimer1 > (pulseLength1 >> 1))
+            {
+                click = 700 + accent[currentStep];
+            }
+            else
+            {
+                click = -1200;
+            }
+        }
+
+        click = SoftClip(click);
+
+        AudioOut1(click);
+
+        int32_t noise =
+            ((int32_t)(Random() & 255) - 128);
+
+        noise *= currentEnergy;
+        noise >>= 7;
+
+        if(pulse2)
+        {
+            noise += 400;
+        }
+
+        noise = SoftClip(noise);
+
+        if(noise > 2047)
+        {
+            noise = 2047;
+        }
+
+        if(noise < -2048)
+        {
+            noise = -2048;
+        }
+
+        AudioOut2(noise);
+
+        if((sampleCounter % kLedDivider) == 0)
+        {
+            int32_t ledEnergy = smoothedEnergy;
+
+            if(ledEnergy > 4095)
+            {
+                ledEnergy = 4095;
+            }
+
+            if(ledEnergy < 0)
+            {
+                ledEnergy = 0;
+            }
+
+            int32_t tensionLED = tension << 4;
+
+            if(tensionLED > 4095)
+            {
+                tensionLED = 4095;
+            }
+
+            LedBrightness(0, pulse1 ? 4095 : 0);
+            LedBrightness(1, density);
+            LedBrightness(2, mutation);
+            LedBrightness(3, ledEnergy);
+            LedBrightness(4, externalClockActive ? 4095 : 0);
+            LedBrightness(5, tensionLED);
+        }
+    }
+};
+
+int main()
+{
+    set_sys_clock_khz(144000, true);
+
+    WildPebble card;
+
+    card.Run();
+}
