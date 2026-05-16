@@ -1,218 +1,287 @@
+# README.md
+
 # Wild Pebble
 
-A playable generative rhythm and melody organism
-for the Music Thing Modular Workshop Computer.
+A generative rhythm and melody organism for the
+Music Thing Modular Workshop Computer.
 
-Wild Pebble is inspired by the spirit of generative
-modular systems like Pet Rock, but adapted for the
-Workshop Computer's constraints and strengths.
+Inspired by the spirit of Jonah Senzel's Pet Rock.
 
-It is designed to feel:
-- alive
-- musical
-- patchable
-- slightly unpredictable
-- but never completely chaotic
+Wild Pebble creates evolving rhythmic structures, quantised melodic patterns, modulation voltages, and clocked sample-and-hold noise textures using lightweight integer-only sequencing logic.
 
-The card continuously evolves rhythms, melodies,
-and modulation signals while preserving recurring
-motifs and groove identity.
+The goal is not precise repeatability, but constrained musical evolution.
 
 ---
 
-# Main Features
+# Features
 
-- Two evolving trigger outputs
-- Quantised melodic CV output
-- Expressive modulation/energy CV
-- Phrase memory and motif reuse
-- Constrained mutation engine
-- Behaviour personalities
-- Internal tension/release cycles
-- Swing and syncopation
-- Internal or external clocking
-- Lightweight integer-only DSP
-
----
-
-# Controls
-
-| Control | Function |
-|---|---|
-| Main knob | Tempo |
-| X knob | Rhythm density |
-| Y knob | Mutation amount |
-
----
-
-# Switch Modes
-
-| Position | Personality |
-|---|---|
-| Up | Hypnotic and repetitive |
-| Middle | Curious and evolving |
-| Down | Nervous and glitchy |
-
-These modes affect:
-- rhythmic mutation
-- melodic movement
-- swing behaviour
-- syncopation
-- phrase stability
-- tension behaviour
-
----
-
-# Inputs
-
-| Input | Function |
-|---|---|
-| Pulse In 1 | External clock |
-| Pulse In 2 | Freeze sequence evolution |
-| CV In 1 | Density modulation |
-| CV In 2 | Mutation modulation |
+* Dual probabilistic trigger streams
+* Quantised melodic CV generation
+* Clocked sample-and-hold noise voice
+* Self-mutating sequence behaviour
+* Phrase replication and variation
+* Slowly rotating scale system
+* Internal tension modulation
+* External or internal clocking
+* Swing timing modes
+* Integer-only DSP and sequencing
+* Low CPU usage
 
 ---
 
 # Outputs
 
-| Output | Function |
-|---|---|
-| Pulse Out 1 | Main groove |
-| Pulse Out 2 | Companion rhythm |
-| CV Out 1 | Quantised melody |
-| CV Out 2 | Energy/modulation contour |
-| Audio Out 1 | Percussive click monitor |
-| Audio Out 2 | Noise/percussion texture |
+## Pulse Output 1
+
+Primary rhythm stream.
+
+Used internally to drive:
+
+* melodic progression
+* click percussion output
 
 ---
 
-# Musical Behaviour
+## Pulse Output 2
 
-Wild Pebble is intentionally designed to avoid
-pure randomness.
+Derived companion rhythm stream.
 
-Instead, it uses:
-- rhythmic memory
-- weighted melodic movement
-- phrase copying
-- tension/release cycles
-- groove preservation
-- constrained mutation
+Used internally to:
 
-This creates sequences that gradually evolve
-without losing their musical identity.
+* trigger sample-and-hold noise updates
+* create correlated rhythmic modulation
 
 ---
 
-# Energy CV
+## CV Output 1
 
-CV Out 2 is not a second melody.
+Quantised melodic pitch output.
 
-Instead, it outputs a continuously evolving
-"energy" signal derived from:
-- accent behaviour
-- mutation activity
-- rhythmic density
-- tension state
-- phrase transitions
-
-Useful patch targets:
-- filter cutoff
-- wavefolder amount
-- VCA level
-- reverb depth
-- FM amount
-- LPG dynamics
+Generated from evolving scale-constrained note sequences.
 
 ---
 
-# Freeze Behaviour
+## CV Output 2
 
-Holding Pulse Input 2 high freezes sequence mutation.
+Energy/tension modulation output.
 
-The pattern continues playing, but evolution pauses.
+A smoothed evolving modulation source derived from:
 
-This allows performers to temporarily capture
-interesting grooves before letting the system evolve again.
+* step energy
+* accent
+* internal tension state
 
 ---
 
-# Clock Behaviour
+## Audio Output 1
 
-If an external clock is detected on Pulse In 1,
-Wild Pebble synchronises automatically.
+Minimal transient percussion/click voice.
 
-Otherwise it uses its internal clock.
+Generated from:
 
-Internal clock modes also introduce subtle swing
-and timing personality.
+* trigger pulses
+* accent values
+* simple bipolar transient shaping
+
+---
+
+## Audio Output 2
+
+Clocked sample-and-hold noise voice.
+
+Unlike white noise, the random value is only updated when Pulse 2 fires.
+
+This creates:
+
+* rhythmic stepped noise
+* pseudo-analog sample-and-hold textures
+* correlated percussion bursts
+* evolving modulation-like audio
+
+---
+
+# Controls
+
+## Main Knob
+
+Controls internal clock speed.
+
+Ignored when external clock is present.
+
+---
+
+## X Knob
+
+Controls rhythmic density.
+
+Higher values increase trigger probability.
+
+CV Input 1 modulates density.
+
+---
+
+## Y Knob
+
+Controls mutation intensity.
+
+Higher values increase:
+
+* sequence mutation
+* melodic movement
+* structural instability
+
+CV Input 2 modulates mutation amount.
+
+---
+
+## Switch Modes
+
+### Up
+
+* stable melodic motion
+* minimal swing
+* conservative mutation
+
+### Middle
+
+* balanced mutation
+* moderate swing
+* wider melodic motion
+
+### Down
+
+* aggressive mutation
+* strongest swing
+* larger melodic jumps
+* denser companion triggers
+
+---
+
+# External Inputs
+
+## Pulse Input 1
+
+External clock input.
+
+Automatically overrides the internal clock while active.
+
+---
+
+## Pulse Input 2
+
+Freeze input.
+
+While held high:
+
+* mutation is disabled
+* current structure is preserved
+
+Clocking and playback continue normally.
+
+---
+
+# Sequencing Behaviour
+
+Wild Pebble continuously evolves using:
+
+* probabilistic trigger generation
+* constrained mutation resistance
+* phrase copying
+* harmonic rotation
+* tension cycling
+
+The system is designed to preserve recognisable musical structure while gradually transforming over long time scales.
 
 ---
 
 # Technical Notes
 
-Wild Pebble is designed specifically for the
-Workshop Computer hardware.
+## Integer-Only Design
 
-Implementation details:
+All sequencing and DSP logic uses integer arithmetic.
 
-- integer-only sequencing logic
-- no floating-point DSP in ProcessSample()
-- fixed-size memory structures
-- lightweight control-rate scheduling
-- calibrated pitch output using CVOut1MIDINote()
-- safe CPU usage for Workshop timing constraints
+This reduces:
 
-Recommended:
-- 144MHz system clock
-- copy_to_ram build target
+* CPU load
+* timing instability
+* floating point overhead
 
 ---
 
-# Patch Ideas
+## Clocked Sample-and-Hold
 
-## Self-Playing Voice
+Noise generation uses a held random value:
 
-- CV Out 1 -> oscillator pitch
-- Pulse Out 1 -> envelope trigger
-- CV Out 2 -> filter cutoff
+```cpp
+if(pulse2)
+{
+    heldNoise =
+        ((int32_t)(Random() & 255) - 128);
+}
+```
 
-Creates a complete evolving synth voice.
+The value remains stable between trigger events.
 
----
-
-## Generative Drum Brain
-
-- Pulse Out 1 -> kick
-- Pulse Out 2 -> hats/snare
-- CV Out 2 -> decay modulation
-
-Useful for evolving percussion systems.
+This produces more musical behaviour than continuous white noise.
 
 ---
 
-## Living Modulation Source
+## RNG
 
-- CV Out 2 -> wavefolder amount
-- Pulse Out 2 -> clock reset
-- Audio Out 2 -> percussion texture
+Wild Pebble uses a lightweight xorshift pseudo-random generator seeded from:
 
-Turns Wild Pebble into an animated modulation organism.
+* RP2040 unique board ID
+* live control states
+
+Each hardware unit therefore develops slightly different long-term behaviour.
 
 ---
 
-# Design Philosophy
+# Building
 
-Wild Pebble embraces the Workshop Computer philosophy:
+Requires:
 
-- constraints as creative tools
-- clarity over complexity
-- musical usefulness over technical purity
-- behaviour over precision
+* Raspberry Pi Pico SDK
+* Workshop Computer framework
 
-Small imperfections are intentional.
+Typical build flow:
 
-The goal is not laboratory-perfect sequencing.
+```bash
+mkdir build
+cd build
+cmake ..
+make
+```
 
-The goal is a tiny musical organism that feels alive.
+---
+
+# CPU Design Goals
+
+Wild Pebble is intentionally lightweight.
+
+Optimisations include:
+
+* no floating point DSP
+* no dynamic memory allocation
+* event-rate random generation
+* low-rate LED updates
+* compact integer sequencing
+
+Designed for stable performance on Workshop Computer hardware at 144 MHz.
+
+---
+
+# Philosophy
+
+Wild Pebble is intended to feel less like a fixed sequencer and more like a small autonomous musical system.
+
+The interaction between:
+
+* mutation
+* repetition
+* probability
+* tension
+* harmonic drift
+* sample-and-hold noise
+
+creates continuously evolving patterns that remain musically coherent.

@@ -56,6 +56,7 @@ public:
 
     int32_t currentMIDINote = 48;
     int32_t currentEnergy = 0;
+    int32_t heldNoise = 0;
 
     bool pulse1 = false;
     bool pulse2 = false;
@@ -477,6 +478,14 @@ public:
         if(clockEvent)
         {
             AdvanceStep(density, mode);
+            
+        // Update S+H only when Pulse2 fires
+            
+        if(pulse2)
+        {
+            heldNoise =
+            ((int32_t)(Random() & 255) - 128);
+        }
 
             if(!freeze)
             {
@@ -564,11 +573,10 @@ public:
 
         AudioOut1(click);
 
-        int32_t noise =
-            ((int32_t)(Random() & 255) - 128);
+        int32_t noise = heldNoise;
 
         noise *= currentEnergy;
-        noise >>= 7;
+        noise >>= 8;
 
         if(pulse2)
         {

@@ -1,41 +1,63 @@
 cmake_minimum_required(VERSION 3.13)
 
-include(pico_sdk_import.cmake)
+# ============================================================
+# Raspberry Pi Pico SDK
+# ============================================================
 
-project(wild_pebble)
+# Set this to your local pico-sdk path
+set(PICO_SDK_PATH "/Users/adrianvos/pico-sdk")
+
+include(${PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+
+# ============================================================
+# Project
+# ============================================================
+
+project(WildPebble C CXX ASM)
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
+
+# ============================================================
+# Initialise Pico SDK
+# ============================================================
 
 pico_sdk_init()
 
-add_executable(wild_pebble
-    main.cpp
+# ============================================================
+# Executable
+# ============================================================
+
+add_executable(WildPebble
+    WildPebble.cpp
 )
 
-target_include_directories(wild_pebble PRIVATE
-    ../../Demonstrations+HelloWorlds/PicoSDK/ComputerCard
+# ============================================================
+# Include paths
+# ============================================================
+
+target_include_directories(WildPebble PRIVATE
+    .
 )
 
-target_compile_definitions(wild_pebble PRIVATE
-    PICO_XOSC_STARTUP_DELAY_MULTIPLIER=64
-)
+# ============================================================
+# Libraries
+# ============================================================
 
-target_compile_options(wild_pebble PRIVATE
-    -Wall
-    -Wextra
-    -Wdouble-promotion
-    -Wfloat-conversion
-)
-
-target_link_libraries(wild_pebble
+target_link_libraries(WildPebble
     pico_stdlib
-    pico_unique_id
     hardware_adc
-    hardware_spi
     hardware_pwm
+    hardware_dma
+    hardware_interp
+    hardware_spi
+    hardware_pio
+    hardware_clocks
+    hardware_flash
 )
 
-# Strongly recommended for stable timing.
-pico_set_binary_type(wild_pebble copy_to_ram)
+# ============================================================
+# Create UF2/BIN/etc
+# ============================================================
 
-pico_enable_stdio_usb(wild_pebble 0)
-
-pico_add_extra_outputs(wild_pebble)
+pico_add_extra_outputs(WildPebble)
