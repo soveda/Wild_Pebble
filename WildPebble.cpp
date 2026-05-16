@@ -30,6 +30,7 @@
 #include "ComputerCard.h"
 #include "hardware/clocks.h"
 #include <stdint.h>
+#include "pico/unique_id.h"
 
 class WildPebble : public ComputerCard
 {
@@ -134,6 +135,38 @@ public:
         trigProb[8] = 220;
         trigProb[12] = 220;
     }
+    
+    void SeedRNGFromFlashID()
+    {
+        pico_unique_board_id_t id;
+
+        pico_get_unique_board_id(&id);
+
+        rng = 0;
+
+        for(int32_t i = 0;
+            i < PICO_UNIQUE_BOARD_ID_SIZE_BYTES;
+            ++i)
+        {
+            rng ^= ((uint32_t)id.id[i])
+                   << ((i & 3) * 8);
+
+            // xorshift-style mixing
+            rng ^= rng << 13;
+            rng ^= rng >> 17;
+            rng ^= rng << 5;
+        }
+
+        // Optional extra entropy from live controls
+        rng ^= (uint32_t)(KnobVal(Knob::Main) << 1);
+        rng ^= (uint32_t)(CVIn1() << 3);
+
+        // Prevent illegal zero RNG state
+        if(rng == 0)
+        {
+            rng = 0xCAFEBABE;
+        }
+    }
 
     void UpdateTension()
     {
@@ -185,6 +218,7 @@ public:
             trigProb[dst + i] = trigProb[src + i];
             noteIndex[dst + i] = noteIndex[src + i];
             accent[dst + i] = accent[src + i];
+            energy[dst + i] = energy[src + i];
         }
 
         int32_t mutateStep = dst + (Random() & 3);
@@ -371,9 +405,7 @@ public:
 
         if(!rngSeeded)
         {
-            rng ^= sampleCounter;
-            rng ^= (uint32_t)(KnobVal(Knob::Main) << 1);
-            rng ^= (uint32_t)(CVIn1() << 3);
+            SeedRNGFromFlashID();
             rngSeeded = true;
         }
 
