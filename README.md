@@ -181,6 +181,87 @@ While held high:
 Clocking and playback continue normally.
 
 ---
+# LED Behaviour
+
+Wild Pebble uses the Workshop Computer’s 6 LEDs as a live visualisation of rhythm, density, mutation, and system state.
+
+| LED   | Function     | Behaviour                                           |
+| ----- | ------------ | --------------------------------------------------- |
+| LED 0 | Main Trigger | Flashes when `PulseOut1` fires                      |
+| LED 1 | Density      | Brightness follows Density control (`Knob X + CV1`) |
+| LED 2 | Mutation     | Brightness follows Mutation amount (`Knob Y + CV2`) |
+| LED 3 | Energy       | Displays smoothed internal energy/modulation level  |
+| LED 4 | Clock Source | Fully lit when external clock is active             |
+| LED 5 | Tension      | Displays evolving internal tension state            |
+
+## Details
+
+### LED 0 — Main Trigger Pulse
+
+This LED mirrors the primary rhythm stream.
+
+* Bright flash on every `pulse1`
+* Shows groove density and rhythmic activity
+* Useful for monitoring sparse probabilistic patterns
+
+### LED 1 — Density
+
+Represents rhythmic density.
+
+Higher brightness means:
+
+* more trigger probability
+* denser rhythmic behaviour
+* more active secondary trigger generation
+
+Driven by:
+
+* `Knob X`
+* `CV Input 1`
+
+### LED 2 — Mutation
+
+Represents mutation intensity.
+
+Higher brightness means:
+
+* more frequent sequence mutation
+* larger melodic movement
+* greater rhythmic instability
+
+Driven by:
+
+* `Knob Y`
+* `CV Input 2`
+
+### LED 3 — Energy
+
+Displays the smoothed internal energy system.
+
+Energy is derived from:
+
+* per-step energy
+* accent values
+* evolving tension
+
+This LED moves slowly and organically rather than flickering rapidly.
+
+### LED 4 — External Clock Detect
+
+Indicates clock source.
+
+| State | Meaning                 |
+| ----- | ----------------------- |
+| OFF   | Internal clock running  |
+| ON    | External clock detected |
+
+Wild Pebble automatically switches to external sync when clock pulses are received at `PulseIn1`.
+
+### LED 5 — Tension
+
+Displays the internal evolving tension value.
+
+
 
 # Sequencing Behaviour
 
@@ -192,7 +273,7 @@ Wild Pebble continuously evolves using:
 * harmonic rotation
 * tension cycling
 
-The system is designed to preserve recognisable musical structure while gradually transforming over long time scales.
+T
 
 ---
 
