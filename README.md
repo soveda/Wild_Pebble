@@ -2,6 +2,8 @@
 
 # Wild Pebble
 
+Still very much in Beta testing
+
 A generative rhythm and melody organism for the
 Music Thing Modular Workshop Computer.
 
