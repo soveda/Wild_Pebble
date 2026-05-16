@@ -46,6 +46,8 @@ target_include_directories(WildPebble PRIVATE
 
 target_link_libraries(WildPebble
     pico_stdlib
+    pico_unique_id
+    
     hardware_adc
     hardware_pwm
     hardware_dma
@@ -54,6 +56,7 @@ target_link_libraries(WildPebble
     hardware_pio
     hardware_clocks
     hardware_flash
+    hardware_i2c
 )
 
 # ============================================================
