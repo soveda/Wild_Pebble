@@ -336,7 +336,12 @@ public:
 
         int32_t threshold =
             trigProb[currentStep] +
-            (density >> 5);
+            ((density - 2048) >> 4);
+
+        if(threshold < 0)
+        {
+            threshold = 0;
+        }
 
         if(threshold > 255)
         {
@@ -391,13 +396,18 @@ public:
             (accent[currentStep] >> 1) +
             (tension >> 1);
 
+        if(currentEnergy < 0)
+        {
+            currentEnergy = 0;
+        }
+
         if(currentEnergy > 255)
         {
             currentEnergy = 255;
         }
 
-        pulseTimer1 = pulseLength1;
-        pulseTimer2 = pulseLength2;
+        pulseTimer1 = pulse1 ? pulseLength1 : 0;
+        pulseTimer2 = pulse2 ? pulseLength2 : 0;
     }
 
     virtual void ProcessSample()
@@ -414,9 +424,10 @@ public:
         int32_t density = KnobVal(Knob::X);
         int32_t mutation = KnobVal(Knob::Y);
 
-        density += (CVIn1() >> 4);
-        mutation += (CVIn2() >> 4);
-
+       
+        density += (CVIn1() >> 1);
+        mutation += (CVIn2() >> 1);
+        
         if(density < 0) density = 0;
         if(density > 4095) density = 4095;
 
@@ -492,6 +503,11 @@ public:
                 int32_t mutationAmount =
                     (mutation >> 4) +
                     (tension >> 3);
+
+                if(mutationAmount > 255)
+                {
+                    mutationAmount = 255;
+                }
 
                 Mutate(mutationAmount, mode);
             }
