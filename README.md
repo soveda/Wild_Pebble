@@ -187,16 +187,16 @@ Wild Pebble uses the Workshop Computer’s 6 LEDs as a live visualisation of rhy
 
 | LED   | Function     | Behaviour                                           |
 | ----- | ------------ | --------------------------------------------------- |
-| LED 0 | Main Trigger | Flashes when `PulseOut1` fires                      |
-| LED 1 | Density      | Brightness follows Density control (`Knob X + CV1`) |
-| LED 2 | Mutation     | Brightness follows Mutation amount (`Knob Y + CV2`) |
-| LED 3 | Energy       | Displays smoothed internal energy/modulation level  |
-| LED 4 | Clock Source | Fully lit when external clock is active             |
-| LED 5 | Tension      | Displays evolving internal tension state            |
+| LED 1 | Main Trigger | Flashes when `PulseOut1` fires                      |
+| LED 2 | Density      | Brightness follows Density control (`Knob X + CV1`) |
+| LED 3 | Mutation     | Brightness follows Mutation amount (`Knob Y + CV2`) |
+| LED 4 | Energy       | Displays smoothed internal energy/modulation level  |
+| LED 5 | Clock Source | Fully lit when external clock is active             |
+| LED 6 | Tension      | Displays evolving internal tension state            |
 
 ## Details
 
-### LED 0 — Main Trigger Pulse
+### LED 1 — Main Trigger Pulse
 
 This LED mirrors the primary rhythm stream.
 
@@ -204,7 +204,7 @@ This LED mirrors the primary rhythm stream.
 * Shows groove density and rhythmic activity
 * Useful for monitoring sparse probabilistic patterns
 
-### LED 1 — Density
+### LED 2 — Density
 
 Represents rhythmic density.
 
@@ -219,7 +219,7 @@ Driven by:
 * `Knob X`
 * `CV Input 1`
 
-### LED 2 — Mutation
+### LED 3 — Mutation
 
 Represents mutation intensity.
 
@@ -234,7 +234,7 @@ Driven by:
 * `Knob Y`
 * `CV Input 2`
 
-### LED 3 — Energy
+### LED 4 — Energy
 
 Displays the smoothed internal energy system.
 
@@ -246,7 +246,7 @@ Energy is derived from:
 
 This LED moves slowly and organically rather than flickering rapidly.
 
-### LED 4 — External Clock Detect
+### LED 5 — External Clock Detect
 
 Indicates clock source.
 
@@ -257,7 +257,7 @@ Indicates clock source.
 
 Wild Pebble automatically switches to external sync when clock pulses are received at `PulseIn1`.
 
-### LED 5 — Tension
+### LED 6 — Tension
 
 Displays the internal evolving tension value.
 
@@ -277,19 +277,7 @@ T
 
 ---
 
-# Technical Notes
 
-## Integer-Only Design
-
-All sequencing and DSP logic uses integer arithmetic.
-
-This reduces:
-
-* CPU load
-* timing instability
-* floating point overhead
-
----
 
 ## Clocked Sample-and-Hold
 
