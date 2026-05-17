@@ -191,11 +191,43 @@ public:
         }
     }
 
-    void RotateScaleSlowly()
+    void RotateScaleSlowly(int32_t mutationAmount, int32_t mode)
     {
-        if((Random() & 255) == 0)
+        int32_t shiftChance;
+
+        if(mode == Switch::Up)
         {
-            currentScale++;
+            shiftChance = 255 - (mutationAmount >> 2);
+        }
+        else if(mode == Switch::Middle)
+        {
+            shiftChance = 255 - (mutationAmount >> 1);
+        }
+        else
+        {
+            shiftChance = 255 - mutationAmount;
+        }
+
+        if(shiftChance < 4)
+        {
+            shiftChance = 4;
+        }
+
+        if((Random() & 255) > (uint32_t)shiftChance)
+        {
+            if((Random() & 3) == 0)
+            {
+                currentScale = Random() % kScaleCount;
+            }
+            else
+            {
+                currentScale += (Random() & 1) ? 1 : -1;
+            }
+
+            if(currentScale < 0)
+            {
+                currentScale = kScaleCount - 1;
+            }
 
             if(currentScale >= kScaleCount)
             {
@@ -524,7 +556,16 @@ public:
                     CopyPhrase();
                 }
 
-                RotateScaleSlowly();
+                int32_t mutationAmount =
+                    (mutation >> 4) +
+                    (tension >> 3);
+
+                if(mutationAmount > 255)
+                {
+                    mutationAmount = 255;
+                }
+
+                RotateScaleSlowly(mutationAmount, mode);
             }
         }
 
