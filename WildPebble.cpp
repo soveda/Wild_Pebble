@@ -470,7 +470,7 @@ public:
             }
 
             internalClockPeriod =
-                12000 - ((tempo * 11000) >> 12);
+                48000 - ((tempo * 47000) >> 12);
 
             if((currentStep >= 0) && (currentStep & 1))
             {
