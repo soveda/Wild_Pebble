@@ -60,6 +60,7 @@ Used internally to:
 Quantised melodic pitch output.
 
 Generated from evolving scale-constrained note sequences.
+Changes scale depending on mutation amount and switch position
 
 ---
 
