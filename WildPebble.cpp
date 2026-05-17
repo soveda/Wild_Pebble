@@ -452,8 +452,8 @@ public:
             kickEnv = 4095;
 
             kickPitch =
-                18 +
-                (accent[currentStep] >> 4);
+                14 +
+                (accent[currentStep] >> 5);
         }
     }
 
@@ -547,7 +547,7 @@ public:
                 snareEnv = 4095;
 
                 snarePitch =
-                    40 +
+                    28 +
                     (accent[currentStep] >> 3);
 
                 
@@ -640,11 +640,14 @@ public:
 
         if(kickEnv > 0)
         {
-            kickPitch -= 1;
-
-            if(kickPitch < 40)
+            if((sampleCounter & 1) == 0)
             {
-                kickPitch = 40;
+                kickPitch -= 1;
+            }
+
+            if(kickPitch < 4)
+            {
+                kickPitch = 4;
             }
         }
         // triangle oscillator
@@ -665,7 +668,7 @@ public:
         // exponential-ish decay
         if(kickEnv > 0)
         {
-            kickEnv -= (kickEnv >> 9) + 1;
+            kickEnv -= (kickEnv >> 12) + 1;
 
             if(kickEnv < 0)
             {
@@ -674,7 +677,7 @@ public:
         }
 
         int32_t kick =
-            (osc * kickEnv) >> 10;
+            (osc * kickEnv) >> 8;
 
         // subtle saturation
         kick = SoftClip(kick);
@@ -694,9 +697,9 @@ public:
         {
             snarePitch -= 1;
 
-            if(snarePitch < 90)
+            if(snarePitch < 24)
             {
-                snarePitch = 90;
+                snarePitch = 24;
             }
         }
 
@@ -727,7 +730,7 @@ public:
         // envelope decay
         if(snareEnv > 0)
         {
-            snareEnv -= (snareEnv >> 8) + 1;
+            snareEnv -= (snareEnv >> 9) + 1;
 
             if(snareEnv < 0)
             {
@@ -737,13 +740,13 @@ public:
 
         // mix tonal + noise
         int32_t snare =
-            ((body * snareEnv) >> 14) +
+            ((body * snareEnv) >> 10) +
             ((noise * snareEnv) >> 10);
 
         // transient click
         if(pulse2)
         {
-            snare += 700;
+            snare += 120;
         }
 
         snare = SoftClip(snare);
