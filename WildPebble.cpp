@@ -635,13 +635,15 @@ public:
         kickPhase += kickPitch;
         kickPhase &= 4095;
 
-        kickPitch -= 4;
-
-        if(kickPitch < 40)
+        if(kickEnv > 0)
         {
-            kickPitch = 40;
-        }
+            kickPitch -= 4;
 
+            if(kickPitch < 40)
+            {
+                kickPitch = 40;
+            }
+        }
         // triangle oscillator
         int32_t osc;
 
@@ -685,11 +687,14 @@ public:
         snarePhase += snarePitch;
         snarePhase &= 4095;
 
-        snarePitch -= 2;
-
-        if(snarePitch < 90)
+        if(snareEnv > 0)
         {
-            snarePitch = 90;
+            snarePitch -= 2;
+
+            if(snarePitch < 90)
+            {
+                snarePitch = 90;
+            }
         }
 
         // triangle oscillator
@@ -729,8 +734,8 @@ public:
 
         // mix tonal + noise
         int32_t snare =
-            ((body * snareEnv) >> 15) +
-            ((noise * snareEnv) >> 10);
+            ((body * snareEnv) >> 13) +
+            ((noise * snareEnv) >> 11);
 
         // transient click
         if(pulse2)
