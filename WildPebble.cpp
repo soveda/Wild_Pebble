@@ -665,7 +665,7 @@ public:
         // exponential-ish decay
         if(kickEnv > 0)
         {
-            kickEnv -= (kickEnv >> 7) + 1;
+            kickEnv -= (kickEnv >> 9) + 1;
 
             if(kickEnv < 0)
             {
@@ -721,13 +721,13 @@ public:
         if(snareEnv > 8)
         {
             noise =
-                ((int32_t)(Random() & 255) - 128);
+                (((int32_t)(Random() & 255) - 128) << 3 );
         }
 
         // envelope decay
         if(snareEnv > 0)
         {
-            snareEnv -= (snareEnv >> 6) + 1;
+            snareEnv -= (snareEnv >> 8) + 1;
 
             if(snareEnv < 0)
             {
@@ -737,8 +737,8 @@ public:
 
         // mix tonal + noise
         int32_t snare =
-            ((body * snareEnv) >> 11) +
-            ((noise * snareEnv) >> 11);
+            ((body * snareEnv) >> 14) +
+            ((noise * snareEnv) >> 10);
 
         // transient click
         if(pulse2)
