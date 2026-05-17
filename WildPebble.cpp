@@ -452,8 +452,8 @@ public:
             kickEnv = 4095;
 
             kickPitch =
-                140 +
-                (accent[currentStep] >> 1);
+                18 +
+                (accent[currentStep] >> 4);
         }
     }
 
@@ -516,9 +516,12 @@ public:
                 swingOffset = 260;
             }
 
-            internalClockPeriod =
-                48000 - ((tempo * 47000) >> 12);
+            static constexpr uint32_t kMaxPeriod = 32000; // ~90 BPM
+            static constexpr uint32_t kMinPeriod = 3000;  // fast end
 
+            internalClockPeriod =
+                kMaxPeriod -
+                ((tempo * (kMaxPeriod - kMinPeriod)) >> 12);
             if((currentStep >= 0) && (currentStep & 1))
             {
                 internalClockPeriod += swingOffset;
@@ -544,8 +547,8 @@ public:
                 snareEnv = 4095;
 
                 snarePitch =
-                    260 +
-                    (accent[currentStep] >> 1);
+                    40 +
+                    (accent[currentStep] >> 3);
 
                 
             }
@@ -637,7 +640,7 @@ public:
 
         if(kickEnv > 0)
         {
-            kickPitch -= 4;
+            kickPitch -= 1;
 
             if(kickPitch < 40)
             {
@@ -671,7 +674,7 @@ public:
         }
 
         int32_t kick =
-            (osc * kickEnv) >> 12;
+            (osc * kickEnv) >> 10;
 
         // subtle saturation
         kick = SoftClip(kick);
@@ -689,7 +692,7 @@ public:
 
         if(snareEnv > 0)
         {
-            snarePitch -= 2;
+            snarePitch -= 1;
 
             if(snarePitch < 90)
             {
@@ -734,7 +737,7 @@ public:
 
         // mix tonal + noise
         int32_t snare =
-            ((body * snareEnv) >> 13) +
+            ((body * snareEnv) >> 11) +
             ((noise * snareEnv) >> 11);
 
         // transient click
