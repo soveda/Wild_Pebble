@@ -77,28 +77,13 @@ A smoothed evolving modulation source derived from:
 
 ## Audio Output 1
 
-Minimal transient percussion/click voice.
-
-Generated from:
-
-* trigger pulses
-* accent values
-* simple bipolar transient shaping
+Bass Drum according to Pulse 1
 
 ---
 
 ## Audio Output 2
 
-Clocked sample-and-hold noise voice.
-
-Unlike white noise, the random value is only updated when Pulse 2 fires.
-
-This creates:
-
-* rhythmic stepped noise
-* pseudo-analog sample-and-hold textures
-* correlated percussion bursts
-* evolving modulation-like audio
+Snare sound according to Pulse 2
 
 ---
 
