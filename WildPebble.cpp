@@ -56,7 +56,13 @@ public:
 
     int32_t currentMIDINote = 48;
     int32_t currentEnergy = 0;
-    int32_t heldNoise = 0;
+    int32_t kickPhase = 0;
+    int32_t kickEnv = 0;
+    int32_t kickPitch = 0;
+    int32_t snareEnv = 0;
+    int32_t snarePhase = 0;
+    int32_t snarePitch = 0;
+    
 
     bool pulse1 = false;
     bool pulse2 = false;
@@ -440,6 +446,15 @@ public:
 
         pulseTimer1 = pulse1 ? pulseLength1 : 0;
         pulseTimer2 = pulse2 ? pulseLength2 : 0;
+        
+        if(pulse1)
+        {
+            kickEnv = 4095;
+
+            kickPitch =
+                140 +
+                (accent[currentStep] >> 1);
+        }
     }
 
     virtual void ProcessSample()
@@ -524,11 +539,16 @@ public:
             
         // Update S+H only when Pulse2 fires
             
-        if(pulse2)
-        {
-            heldNoise =
-            ((int32_t)(Random() & 255) - 128);
-        }
+            if(pulse2)
+            {
+                snareEnv = 4095;
+
+                snarePitch =
+                    260 +
+                    (accent[currentStep] >> 1);
+
+                
+            }
 
             if(!freeze)
             {
@@ -612,47 +632,125 @@ public:
         
         CVOut2(energyCV);
 
-        int32_t click = 0;
+        kickPhase += kickPitch;
+        kickPhase &= 4095;
 
-        if(pulse1)
+        kickPitch -= 4;
+
+        if(kickPitch < 40)
         {
-            if(pulseTimer1 > (pulseLength1 >> 1))
+            kickPitch = 40;
+        }
+
+        // triangle oscillator
+        int32_t osc;
+
+        if(kickPhase & 2048)
+        {
+            osc = 2048 - (kickPhase & 2047);
+        }
+        else
+        {
+            osc = kickPhase & 2047;
+        }
+
+        osc -= 1024;
+        osc <<= 1;
+
+        // exponential-ish decay
+        if(kickEnv > 0)
+        {
+            kickEnv -= (kickEnv >> 7) + 1;
+
+            if(kickEnv < 0)
             {
-                click = 700 + accent[currentStep];
-            }
-            else
-            {
-                click = -1200;
+                kickEnv = 0;
             }
         }
 
-        click = SoftClip(click);
+        int32_t kick =
+            (osc * kickEnv) >> 12;
 
-        AudioOut1(click);
+        // subtle saturation
+        kick = SoftClip(kick);
 
-        int32_t noise = heldNoise;
+        AudioOut1(kick);
 
-        noise *= currentEnergy;
-        noise >>= 8;
 
+        // =====================================================
+        // Snare synth
+        // =====================================================
+
+        // tonal body
+        snarePhase += snarePitch;
+        snarePhase &= 4095;
+
+        snarePitch -= 2;
+
+        if(snarePitch < 90)
+        {
+            snarePitch = 90;
+        }
+
+        // triangle oscillator
+        int32_t body;
+
+        if(snarePhase & 2048)
+        {
+            body = 2048 - (snarePhase & 2047);
+        }
+        else
+        {
+            body = snarePhase & 2047;
+        }
+
+        body -= 1024;
+        body <<= 1;
+
+        // fresh noise every sample while envelope active
+        int32_t noise = 0;
+
+        if(snareEnv > 8)
+        {
+            noise =
+                ((int32_t)(Random() & 255) - 128);
+        }
+
+        // envelope decay
+        if(snareEnv > 0)
+        {
+            snareEnv -= (snareEnv >> 6) + 1;
+
+            if(snareEnv < 0)
+            {
+                snareEnv = 0;
+            }
+        }
+
+        // mix tonal + noise
+        int32_t snare =
+            ((body * snareEnv) >> 15) +
+            ((noise * snareEnv) >> 10);
+
+        // transient click
         if(pulse2)
         {
-            noise += 400;
+            snare += 700;
         }
 
-        noise = SoftClip(noise);
+        snare = SoftClip(snare);
 
-        if(noise > 2047)
+        if(snare > 2047)
         {
-            noise = 2047;
+            snare = 2047;
         }
 
-        if(noise < -2048)
+        if(snare < -2048)
         {
-            noise = -2048;
+            snare = -2048;
         }
 
-        AudioOut2(noise);
+        AudioOut2(snare);
 
         if((sampleCounter % kLedDivider) == 0)
         {
