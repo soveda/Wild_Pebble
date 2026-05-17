@@ -9,7 +9,7 @@ Music Thing Modular Workshop Computer.
 
 Inspired by the spirit of Jonah Senzel's Pet Rock.
 
-Wild Pebble creates evolving rhythmic structures, quantised melodic patterns, modulation voltages, and clocked sample-and-hold noise textures using lightweight integer-only sequencing logic.
+Wild Pebble creates evolving rhythmic structures, quantised melodic patterns, drum voices, and modulation voltages that slowly transform over time while remaining musically connected.
 
 The goal is not precise repeatability, but constrained musical evolution.
 
@@ -19,14 +19,13 @@ The goal is not precise repeatability, but constrained musical evolution.
 
 * Dual probabilistic trigger streams
 * Quantised melodic CV generation
-* Clocked sample-and-hold noise voice
+* Internal kick and snare percussion voices
 * Self-mutating sequence behaviour
 * Phrase replication and variation
-* Slowly rotating scale system
+* Slowly evolving scale randomisation
 * Internal tension modulation
 * External or internal clocking
 * Swing timing modes
-* Integer-only DSP and sequencing
 * Low CPU usage
 
 ---
@@ -40,7 +39,7 @@ Primary rhythm stream.
 Used internally to drive:
 
 * melodic progression
-* click percussion output
+* kick drum voice
 
 ---
 
@@ -50,8 +49,8 @@ Derived companion rhythm stream.
 
 Used internally to:
 
-* trigger sample-and-hold noise updates
-* create correlated rhythmic modulation
+* trigger the snare voice
+* create correlated rhythmic variation
 
 ---
 
@@ -60,7 +59,8 @@ Used internally to:
 Quantised melodic pitch output.
 
 Generated from evolving scale-constrained note sequences.
-Changes scale depending on mutation amount and switch position
+
+Wild Pebble slowly changes between related scales over time depending on mutation amount and switch mode, creating harmonic drift without fully losing musical coherence.
 
 ---
 
@@ -78,13 +78,17 @@ A smoothed evolving modulation source derived from:
 
 ## Audio Output 1
 
-Bass Drum according to Pulse 1
+Kick drum voice driven from the primary trigger stream.
+
+Produces deep evolving bass drum patterns with long decaying tails and pitch movement tied to sequence accents.
 
 ---
 
 ## Audio Output 2
 
-Snare sound according to Pulse 2
+Snare and percussion voice driven from the companion trigger stream.
+
+Combines tonal percussion with noise elements for shifting rhythmic textures ranging from soft clicks to noisy snare bursts.
 
 ---
 
@@ -95,6 +99,19 @@ Snare sound according to Pulse 2
 Controls internal clock speed.
 
 Ignored when external clock is present.
+
+---
+
+## Clock Range
+
+Wild Pebble’s internal clock ranges from approximately:
+
+* **~90 BPM** at the slowest setting
+* to fast audio-rate adjacent rhythmic speeds at the highest setting
+
+The clock is designed to move smoothly from slow generative sequencing into dense evolving percussion patterns.
+
+Swing amount varies depending on switch mode and affects every second step of the internal clock.
 
 ---
 
@@ -116,6 +133,7 @@ Higher values increase:
 
 * sequence mutation
 * melodic movement
+* scale changes
 * structural instability
 
 CV Input 2 modulates mutation amount.
@@ -127,21 +145,24 @@ CV Input 2 modulates mutation amount.
 ### Up
 
 * stable melodic motion
-* minimal swing
-* conservative mutation
+* restrained mutation
+* slower harmonic movement
+* tighter rhythms
 
 ### Middle
 
 * balanced mutation
 * moderate swing
-* wider melodic motion
+* evolving melodic variation
+* gradual harmonic drift
 
 ### Down
 
 * aggressive mutation
 * strongest swing
-* larger melodic jumps
-* denser companion triggers
+* wider melodic jumps
+* more active scale changes
+* denser companion rhythms
 
 ---
 
@@ -167,6 +188,7 @@ While held high:
 Clocking and playback continue normally.
 
 ---
+
 # LED Behaviour
 
 Wild Pebble uses the Workshop Computer’s 6 LEDs as a live visualisation of rhythm, density, mutation, and system state.
@@ -180,74 +202,7 @@ Wild Pebble uses the Workshop Computer’s 6 LEDs as a live visualisation of rhy
 | LED 5 | Clock Source | Fully lit when external clock is active             |
 | LED 6 | Tension      | Displays evolving internal tension state            |
 
-## Details
-
-### LED 1 — Main Trigger Pulse
-
-This LED mirrors the primary rhythm stream.
-
-* Bright flash on every `pulse1`
-* Shows groove density and rhythmic activity
-* Useful for monitoring sparse probabilistic patterns
-
-### LED 2 — Density
-
-Represents rhythmic density.
-
-Higher brightness means:
-
-* more trigger probability
-* denser rhythmic behaviour
-* more active secondary trigger generation
-
-Driven by:
-
-* `Knob X`
-* `CV Input 1`
-
-### LED 3 — Mutation
-
-Represents mutation intensity.
-
-Higher brightness means:
-
-* more frequent sequence mutation
-* larger melodic movement
-* greater rhythmic instability
-
-Driven by:
-
-* `Knob Y`
-* `CV Input 2`
-
-### LED 4 — Energy
-
-Displays the smoothed internal energy system.
-
-Energy is derived from:
-
-* per-step energy
-* accent values
-* evolving tension
-
-This LED moves slowly and organically rather than flickering rapidly.
-
-### LED 5 — External Clock Detect
-
-Indicates clock source.
-
-| State | Meaning                 |
-| ----- | ----------------------- |
-| OFF   | Internal clock running  |
-| ON    | External clock detected |
-
-Wild Pebble automatically switches to external sync when clock pulses are received at `PulseIn1`.
-
-### LED 6 — Tension
-
-Displays the internal evolving tension value.
-
-
+---
 
 # Sequencing Behaviour
 
@@ -257,40 +212,10 @@ Wild Pebble continuously evolves using:
 * constrained mutation resistance
 * phrase copying
 * harmonic rotation
+* evolving scale selection
 * tension cycling
 
-T
-
----
-
-
-
-## Clocked Sample-and-Hold
-
-Noise generation uses a held random value:
-
-```cpp
-if(pulse2)
-{
-    heldNoise =
-        ((int32_t)(Random() & 255) - 128);
-}
-```
-
-The value remains stable between trigger events.
-
-This produces more musical behaviour than continuous white noise.
-
----
-
-## RNG
-
-Wild Pebble uses a lightweight xorshift pseudo-random generator seeded from:
-
-* RP2040 unique board ID
-* live control states
-
-Each hardware unit therefore develops slightly different long-term behaviour.
+The interaction between rhythm mutation, melodic drift, repeating phrases, and gradual scale movement creates patterns that evolve organically while remaining playable and musically usable.
 
 ---
 
@@ -312,22 +237,6 @@ make
 
 ---
 
-# CPU Design Goals
-
-Wild Pebble is intentionally lightweight.
-
-Optimisations include:
-
-* no floating point DSP
-* no dynamic memory allocation
-* event-rate random generation
-* low-rate LED updates
-* compact integer sequencing
-
-Designed for stable performance on Workshop Computer hardware at 144 MHz.
-
----
-
 # Philosophy
 
 Wild Pebble is intended to feel less like a fixed sequencer and more like a small autonomous musical system.
@@ -339,6 +248,7 @@ The interaction between:
 * probability
 * tension
 * harmonic drift
-* sample-and-hold noise
+* evolving drum voices
+* slow scale randomisation
 
-creates continuously evolving patterns that remain musically coherent.
+creates continuously shifting patterns that remain musically coherent and performance-friendly.
